@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8">
+		<title>Тренажёр Шантена и Ожиданий — Ричи Маджонг</title>
+		<style>
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background-color: #005511;
+				color: #ecf0f1;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				padding: 20px;
+				margin: 0;
+			}
+
+			h1 {
+				margin-bottom: 5px;
+				text-shadow: 1px 1px 2px #000;
+			}
+
+			.instructions {
+				color: #bdc3c7;
+				margin-bottom: 20px;
+				font-size: 0.9em;
+				text-align: center;
+				max-width: 700px;
+				line-height: 1.4;
+			}
+
+			.hand-container {
+				display: flex;
+				gap: 5px;
+				background: #1a252f;
+				padding: 15px 20px;
+				border-radius: 10px;
+				box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+				margin-bottom: 25px;
+				max-width: 100%;
+				overflow-x: auto;
+			}
+
+			.tile {
+				width: 54px;
+				height: 76px;
+				background: #f5f6fa;
+				border-radius: 5px;
+				cursor: pointer;
+				user-select: none;
+				box-shadow: inset 0 -4px 0 #dcdde1, 0 4px 5px rgba(0, 0, 0, 0.3);
+				transition: transform 0.1s, background-color 0.2s;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				box-sizing: border-box;
+				border: 2px solid transparent;
+			}
+
+			.tile:hover {
+				transform: translateY(-5px);
+				background: #ffffff;
+			}
+
+			.tile.selected {
+				background: #eccc68;
+				transform: translateY(-5px);
+				box-shadow: inset 0 -4px 0 #ff7f50, 0 4px 5px rgba(0, 0, 0, 0.3);
+				border-color: #ff7f50;
+			}
+
+			.tile img {
+				width: 100%;
+				height: auto;
+				display: block;
+				pointer-events: none;
+			}
+
+			.controls {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 15px;
+				width: 100%;
+				max-width: 600px;
+			}
+
+			.shanten-buttons {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+				justify-content: center;
+			}
+
+			button {
+				padding: 12px 24px;
+				font-size: 1em;
+				font-weight: bold;
+				border: none;
+				border-radius: 5px;
+				cursor: pointer;
+				background-color: #34495e;
+				color: white;
+				box-shadow: 0 4px 0 #2c3e50;
+				transition: background 0.1s;
+			}
+
+			button:hover {
+				background-color: #415b76;
+			}
+
+			button:active {
+				transform: translateY(4px);
+				box-shadow: none;
+			}
+
+			button.action-btn {
+				background-color: #27ae60;
+				box-shadow: 0 4px 0 #219653;
+			}
+
+			button.action-btn:hover {
+				background-color: #2ecc71;
+			}
+
+			.feedback {
+				font-size: 1.3em;
+				font-weight: bold;
+				margin-top: 20px;
+				min-height: 30px;
+				text-align: center;
+				max-width: 600px;
+			}
+
+			.success {
+				color: #2ecc71;
+			}
+
+			.error {
+				color: #e74c3c;
+			}
+
+			.info {
+				color: #f1c40f;
+				font-size: 0.95em;
+				margin-top: 10px;
+				text-align: center;
+				max-width: 750px;
+				line-height: 1.5;
+				background: #1a252f;
+				padding: 15px;
+				border-radius: 8px;
+				box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+			}
+
+			.waits-display {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 5px;
+				margin-top: 8px;
+				flex-wrap: wrap;
+			}
+
+			.mini-tile {
+				width: 30px;
+				height: 42px;
+				background: #f5f6fa;
+				border-radius: 3px;
+				box-shadow: inset 0 -2px 0 #dcdde1, 0 2px 3px rgba(0, 0, 0, 0.3);
+				display: inline-flex;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.mini-tile img {
+				width: 100%;
+				height: auto;
+			}
+
+		</style>
+	</head>
+
+	<body>
+		<h1>Тренажёр Шантена и Ожиданий</h1>
+		<div class="instructions"> В руке 14 тайлов. Алгоритм учитывает Стандартную форму, Семь Пар и 13 Сирот.<br> Если есть <b>Темпай</b>: кликом выберите <b>ВСЕ ТАЙЛЫ, СБРОС КАЖДОГО ИЗ КОТОРЫХ ДАЁТ ТЕМПАЙ,</b> и нажмите «Проверить сбросы».<br> Если темпая нет: ничего не выбирая, нажмите кнопку текущего шантена. </div>
+		<div class="hand-container" id="hand"></div>
+		<div class="controls">
+			<button class="action-btn" id="submit-discard" style="display:none;">Проверить сбросы в Темпай</button>
+			<div class="shanten-buttons" id="shanten-group">
+				<button data-value="1">Ишантен (1)</button>
+				<button data-value="2">Ряншантен (2)</button>
+				<button data-value="3">Саншантен (3)</button>
+				<button data-value="4">4+ Шантен</button>
+			</div>
+            <div>
+                <button id="next-hand" style="margin-top: 10px; background-color: #e67e22; box-shadow: 0 4px 0 #d35400;">Следующая рука</button>
+			    <button id="next-hand-tempai" style="margin-top: 10px; background-color: #a33131; box-shadow: 0 4px 0 #632b06;">Следующая рука (с темпаем)</button>
+            </div>    
+		</div>
+		<div class="feedback" id="feedback"></div>
+		<div class="info" id="debug-info"></div>
+    </body>
+</html>
+<script>
+    const SUITS = ['m', 'p', 's', 'z'];
+
+    const MAX_VALS = {
+        m: 9,
+        p: 9,
+        s: 9,
+        z: 7
+    };
+
+    const IMAGE_MAPPING = {
+        'm': 'Man',
+        'p': 'Pin',
+        's': 'Sou',
+        'z': {
+            1: 'Ton',
+            2: 'Nan',
+            3: 'Shaa',
+            4: 'Pei',
+            5: 'Haku',
+            6: 'Hatsu',
+            7: 'Chun'
+        }
+    };
+
+    let currentHand = [];
+    let selectedTileIndexes = new Set();
+
+    function createDeck() {
+        let deck = [];
+        let id = 0;
+
+        for (let suit of SUITS) {
+            for (let val = 1; val <= MAX_VALS[suit]; val++) {
+                for (let i = 0; i < 4; i++) {
+                    deck.push({
+                        id: id++,
+                        suit: suit,
+                        val: val
+                    });
+                }
+            }
+        }
+
+        return deck;
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+
+        return array;
+    }
+
+    function convertToCountMap(hand) {
+        let map = {
+            m: Array(10).fill(0),
+            p: Array(10).fill(0),
+            s: Array(10).fill(0),
+            z: Array(8).fill(0)
+        };
+
+        for (let t of hand) {
+            map[t.suit][t.val]++;
+        }
+
+        return map;
+    }
+    // --- АЛГОРИТМ РАСЧЕТА ШАНТЕНА ---
+    function calculateShanten(hand) {
+        let counts = convertToCountMap(hand);
+        let regular = calculateRegularShanten(counts);
+        let chiitoitsu = calculateChiitoitsuShanten(counts, hand.length);
+        let kokushi = calculateKokushiShanten(counts);
+
+        return Math.min(regular, chiitoitsu, kokushi);
+    }
+
+    // Основная функция расчета стандартного шантена (4 сета + 1 пара)
+    function calculateRegularShanten(counts) {
+        let minShanten = 8; // Худший возможный шантен для стандартной руки
+
+        // ВЕТКА 1: Предполагаем, что в руке ЕСТЬ пара (Голова / Janto)
+        for (let suit of SUITS) {
+            for (let val = 1; val <= MAX_VALS[suit]; val++) {
+                if (counts[suit][val] >= 2) {
+                    // Виртуально извлекаем пару из руки
+                    counts[suit][val] -= 2;
+
+                    // Ищем максимальное количество сетов и заготовок в оставшихся тайлах
+                    let maxMelds = {
+                        sets: 0,
+                        proto: 0
+                    };
+
+                    findMaxCombinations(counts, 0, 1, 0, 0, maxMelds);
+                    // Если у нас есть выделенная пара, лимит сетов/заготовок равен 4.
+                    // Формула: 8 - 1 (за пару) - 2 * сеты - 1 * заготовки
+                    let totalCombinations = maxMelds.sets + Math.min(4 - maxMelds.sets, maxMelds.proto);
+                    let shanten = 7 - 2 * maxMelds.sets - Math.min(4 - maxMelds.sets, maxMelds.proto);
+                    if (shanten < minShanten) minShanten = shanten;
+                    // Возвращаем пару обратно (бэктрэкинг)
+                    counts[suit][val] += 2;
+                }
+            }
+        }
+
+        // ВЕТКА 2: Рука БЕЗ пары (все 14 тайлов рассматриваются только как сеты и заготовки)
+        let maxMeldsNoPair = {
+            sets: 0,
+            proto: 0
+        };
+
+        findMaxCombinations(counts, 0, 1, 0, 0, maxMeldsNoPair);
+        // Если пары нет, максимальное число комбинаций все еще 4, но формула штрафует за отсутствие головы.
+        // Формула: 8 - 2 * сеты - 1 * заготовки
+        let shantenWithoutPair = 8 - 2 * maxMeldsNoPair.sets - Math.min(4 - maxMeldsNoPair.sets, maxMeldsNoPair.proto);
+        if (shantenWithoutPair < minShanten) minShanten = shantenWithoutPair;
+
+        return minShanten;
+    }
+
+    // Рекурсивный DFS, который ищет глобальный максимум комбинаций (идеальный баланс сетов и заготовок)
+    function findMaxCombinations(counts, sIdx, v, currentSets, currentProto, bestResult) {
+        // Базовый случай: прошлись по всем мастям
+        if (sIdx >= SUITS.length) {
+            // Мы ищем комбинацию, которая дает наименьший шантен.
+            // Шантен уменьшается сильнее от готовых сетов (на 2), чем от заготовок (на 1).
+            // Поэтому мы сравниваем условную "силу" руки: (sets * 2 + proto)
+            let currentScore = currentSets * 2 + currentProto;
+            let bestScore = bestResult.sets * 2 + bestResult.proto;
+
+            if (currentScore > bestScore) {
+                bestResult.sets = currentSets;
+                bestResult.proto = currentProto;
+            }
+
+            return;
+        }
+
+        let suit = SUITS[sIdx];
+
+        // Переход к следующей масти
+        if (v > MAX_VALS[suit]) {
+            findMaxCombinations(counts, sIdx + 1, 1, currentSets, currentProto, bestResult);
+
+            return;
+        }
+
+        // 1. КОЦУ (Тройка)
+        if (counts[suit][v] >= 3) {
+            counts[suit][v] -= 3;
+            findMaxCombinations(counts, sIdx, v, currentSets + 1, currentProto, bestResult);
+            counts[suit][v] += 3;
+        }
+
+        // 2. ШУНЦУ (Последовательность)
+        if (suit !== 'z' && v <= 7 && counts[suit][v] > 0 && counts[suit][v + 1] > 0 && counts[suit][v + 2] > 0) {
+            counts[suit][v]--;
+            counts[suit][v + 1]--;
+            counts[suit][v + 2]--;
+            findMaxCombinations(counts, sIdx, v, currentSets + 1, currentProto, bestResult);
+            counts[suit][v]++;
+            counts[suit][v + 1]++;
+            counts[suit][v + 2]++;
+        }
+
+        // 3. ПАРА (Внутри оставшихся тайлов рассматривается как заготовка к Коцу)
+        if (counts[suit][v] >= 2) {
+            counts[suit][v] -= 2;
+            findMaxCombinations(counts, sIdx, v, currentSets, currentProto + 1, bestResult);
+            counts[suit][v] += 2;
+        }
+
+        // 4. РЯНМЕН / ПЕНЧЕН (Заготовка последовательности, например 4-5 или 1-2)
+        if (suit !== 'z' && v <= 8 && counts[suit][v] > 0 && counts[suit][v + 1] > 0) {
+            counts[suit][v]--;
+            counts[suit][v + 1]--;
+            findMaxCombinations(counts, sIdx, v, currentSets, currentProto + 1, bestResult);
+            counts[suit][v]++;
+            counts[suit][v + 1]++;
+        }
+
+        // 5. КАНЧЕН (Дырявая заготовка последовательности, например 4-6)
+        if (suit !== 'z' && v <= 7 && counts[suit][v] > 0 && counts[suit][v + 2] > 0) {
+            counts[suit][v]--;
+            counts[suit][v + 2]--;
+            findMaxCombinations(counts, sIdx, v, currentSets, currentProto + 1, bestResult);
+            counts[suit][v]++;
+            counts[suit][v + 2]++;
+        }
+
+        // 6. Игнорируем тайл и идем дальше
+        findMaxCombinations(counts, sIdx, v + 1, currentSets, currentProto, bestResult);
+    }
+
+    function calculateChiitoitsuShanten(counts, handLength) {
+        let pairs = new Map();
+        let singleTiles = 0;
+
+        for (let suit of SUITS) {
+            for (let val = 1; val <= MAX_VALS[suit]; val++) {
+                if (counts[suit][val] >= 2) pairs.set(suit + '_' + val, 1);
+                if (counts[suit][val] == 1) singleTiles++;
+            }
+        }
+
+        let shanten = 6 - pairs.size;
+
+        if (singleTiles == 0) {
+            shanten = Math.max(shanten, 1);
+        }
+        
+        return shanten;
+    }
+
+    function calculateKokushiShanten(counts) {
+        let terminals = [{
+            s: 'm',
+            v: 1
+        }, {
+            s: 'm',
+            v: 9
+        }, {
+            s: 'p',
+            v: 1
+        }, {
+            s: 'p',
+            v: 9
+        }, {
+            s: 's',
+            v: 1
+        }, {
+            s: 's',
+            v: 9
+        }, {
+            s: 'z',
+            v: 1
+        }, {
+            s: 'z',
+            v: 2
+        }, {
+            s: 'z',
+            v: 3
+        }, {
+            s: 'z',
+            v: 4
+        }, {
+            s: 'z',
+            v: 5
+        }, {
+            s: 'z',
+            v: 6
+        }, {
+            s: 'z',
+            v: 7
+        }];
+
+        let uniqueTerminalsCollected = 0;
+        let hasPair = 0;
+
+        for (let t of terminals) {
+            let count = counts[t.s][t.v];
+
+            if (count > 0) {
+                uniqueTerminalsCollected++;
+                if (count >= 2) hasPair = 1;
+            }
+        }
+
+        return 13 - uniqueTerminalsCollected - hasPair;
+    }
+
+    // --- ВЫЧИСЛЕНИЕ ОЖИДАНИЙ (МАТИ) ---
+    // Принимает на вход руку из 13 тайлов (уже после сброса)
+    function getMachiWaits(thirteenTileHand) {
+        let waits = [];
+
+        // Пробегаемся по всем 34 видам тайлов в игре
+        for (let suit of SUITS) {
+            for (let val = 1; val <= MAX_VALS[suit]; val++) {
+                // Виртуально добавляем тайл в руку
+                let virtualHand = [...thirteenTileHand, {
+                    suit: suit,
+                    val: val
+                }];
+
+                // Если шантен стал равен -1, значит рука собрана (Agari), и этот тайл — ожидание!
+                if (calculateShanten(virtualHand) === -1) {
+                    waits.push({
+                        suit: suit,
+                        val: val
+                    });
+                }
+            }
+        }
+
+        return waits;
+    }
+
+    // --- ЛОГИКА ТРЕНАЖЁРА ---
+    function getTileFileName(tile) {
+        if (tile.suit === 'z') return IMAGE_MAPPING['z'][tile.val];
+
+        return IMAGE_MAPPING[tile.suit] + tile.val;
+    }
+
+    function updateControlsVisibility() {
+        const submitBtn = document.getElementById('submit-discard');
+        const shantenGroup = document.getElementById('shanten-group');
+
+        if (selectedTileIndexes.size > 0) {
+            submitBtn.style.display = 'block';
+            shantenGroup.style.display = 'none';
+        } else {
+            submitBtn.style.display = 'none';
+            shantenGroup.style.display = 'flex';
+        }
+    }
+
+    function selectTile(index) {
+        const tileElements = document.querySelectorAll('.tile');
+
+        if (selectedTileIndexes.has(index)) {
+            selectedTileIndexes.delete(index);
+            tileElements[index].classList.remove('selected');
+        } else {
+            selectedTileIndexes.add(index);
+            tileElements[index].classList.add('selected');
+        }
+
+        updateControlsVisibility();
+    }
+
+    function generateTempaiHand() {
+        generateNewHand(true);
+        document.getElementById('shanten-group').style.display = 'none';
+    }
+
+    function generateNewHand(withTempai = false) {
+        let deck = createDeck();
+        shuffle(deck);
+        currentHand = deck.slice(0, 14);
+
+        if (withTempai == true) {
+            tempai = false;
+
+            while (tempai == false) {
+                if (calculateShanten(currentHand) > 0) {
+                    let deck = createDeck();
+                    shuffle(deck);
+                    currentHand = deck.slice(0, 14);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        currentHand.sort((a, b) => {
+            if (a.suit !== b.suit) return SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit);
+
+            return a.val - b.val;
+        });
+
+        selectedTileIndexes.clear();
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('feedback').className = 'feedback';
+        document.getElementById('debug-info').innerText = '';
+        updateControlsVisibility();
+        const handDiv = document.getElementById('hand');
+        handDiv.innerHTML = '';
+
+        currentHand.forEach((tile, index) => {
+            const tileDiv = document.createElement('div');
+            tileDiv.className = 'tile';
+            tileDiv.onclick = () => selectTile(index);
+            let fileName = getTileFileName(tile);
+            let imgUrl = `tiles/${fileName}.svg`;
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.alt = `${tile.val}${tile.suit}`;
+            img.height = "100";
+            tileDiv.style.backgroundColor = "white";
+            tileDiv.style.padding = "2px";
+            tileDiv.style.borderRadius = "10px";
+            tileDiv.appendChild(img);
+            handDiv.appendChild(tileDiv);
+
+            if (index == 13) {
+                tileDiv.style.marginLeft = "20px";
+            }
+        });
+    }
+
+    function getWinningDiscards() {
+        let correctIndexes = [];
+
+        for (let i = 0; i < currentHand.length; i++) {
+            let testHand = currentHand.filter((_, idx) => idx !== i);
+
+            if (calculateShanten(testHand) === 0) {
+                correctIndexes.push(i);
+            }
+        }
+
+        return correctIndexes;
+    }
+
+    function checkDiscardAnswer() {
+        if (selectedTileIndexes.size === 0) return;
+        let baseShanten = calculateShanten(currentHand);
+        let correctIndexes = getWinningDiscards();
+        let feedback = document.getElementById('feedback');
+        let isPerfect = true;
+
+        for (let idx of selectedTileIndexes) {
+            if (!correctIndexes.includes(idx)) isPerfect = false;
+        }
+
+        for (let idx of correctIndexes) {
+            if (!selectedTileIndexes.has(idx)) isPerfect = false;
+        }
+
+        if (isPerfect) {
+            feedback.innerText = `✅ Великолепно! Вы нашли все тайлы (${correctIndexes.length} шт.) для выхода в Темпай!`;
+            feedback.className = 'feedback success';
+        } else {
+            feedback.innerText = `❌ Неверно. Требовалось выбрать ровно столько сбросов: ${correctIndexes.length} шт.`;
+            feedback.className = 'feedback error';
+        }
+
+        showDebugInfo(baseShanten, correctIndexes);
+    }
+
+    function checkShantenAnswer(userAnswer) {
+        let baseShanten = calculateShanten(currentHand);
+        let correctIndexes = getWinningDiscards();
+        let feedback = document.getElementById('feedback');
+
+        if (correctIndexes.length > 0) {
+            feedback.innerText = "❌ Неверно! У руки есть Темпай (0 шантена). Выделите сбросы на тайлах!";
+            feedback.className = 'feedback error';
+            showDebugInfo(baseShanten, correctIndexes);
+            return;
+        }
+
+        let isCorrect = false;
+        if (userAnswer === "4+" && baseShanten >= 4) isCorrect = true;
+        else if (parseInt(userAnswer) === baseShanten) isCorrect = true;
+
+        if (isCorrect) {
+            feedback.innerText = `✅ Правильно! У этой руки действительно ${baseShanten} шантен (${getShantenName(baseShanten)}).`;
+            feedback.className = 'feedback success';
+        } else {
+            feedback.innerText = `❌ Неверно! На самом деле у руки ${baseShanten} шантен.`;
+            feedback.className = 'feedback error';
+        }
+
+        showDebugInfo(baseShanten, correctIndexes);
+    }
+
+    function getShantenName(val) {
+        if (val === 1) return "Ишантен";
+        if (val === 2) return "Ряншантен";
+        if (val === 3) return "Саншантен";
+
+        return `${val} шантен`;
+    }
+
+    function generateTileHTML(tile) {
+        let fileName = getTileFileName(tile);
+        let imgUrl = `tiles/${fileName}.svg`;
+
+        return `<span class="mini-tile"><img src="${imgUrl}" alt="${tile.val}${tile.suit}" style="margin:2px"></span>`;
+    }
+
+    function showDebugInfo(actualShanten, correctIndexes) {
+        let infoDiv = document.getElementById('debug-info');
+        let counts = convertToCountMap(currentHand);
+        let reg = calculateRegularShanten(counts);
+        let chi = calculateChiitoitsuShanten(counts, currentHand.length);
+        let kok = calculateKokushiShanten(counts);
+        let report = `<b>Анализ руки:</b> Текущее состояние: ${actualShanten === 0 && correctIndexes.length > 0 ? "Есть Темпай" : getShantenName(actualShanten)}.<br>`;
+        report += `<small style="color:#bdc3c7;">(Стандартная: ${reg}ш, Читойцу: ${chi}ш, Кокуси: ${kok}ш)</small><br><br>`;
+
+        if (correctIndexes.length > 0) {
+            report += `<b>Правильные сбросы и их ожидания (мати):</b><br>`;
+
+            // Для каждого правильного сброса находим свои уникальные ожидания
+            correctIndexes.forEach(idx => {
+                let discardedTile = currentHand[idx];
+                let testHand = currentHand.filter((_, i) => i !== idx);
+                let waits = getMachiWaits(testHand);
+                // Генерируем HTML строчку с мини-картинками ожиданий
+                let waitsHTML = waits.map(w => generateTileHTML(w)).join(' ');
+                let discardHTML = generateTileHTML(discardedTile);
+                report += `<div class="waits-display">Сброс ${discardHTML} (поз. ${idx + 1}) ➡️ Ждёт тайлы (${waits.length} шт.): ${waitsHTML}</div>`;
+            });
+        } else {
+            report += `Сбросов, дающих темпай, нет.`;
+        }
+
+        infoDiv.innerHTML = report;
+    }
+
+    // --- НАВЕШИВАНИЕ СОБЫТИЙ ---
+    document.getElementById('submit-discard').onclick = checkDiscardAnswer;
+    document.getElementById('next-hand').onclick = generateNewHand;
+    document.getElementById('next-hand-tempai').onclick = generateTempaiHand;
+
+    document.querySelectorAll('#shanten-group button').forEach(button => {
+        button.onclick = () => {
+            let val = button.getAttribute('data-value');
+            checkShantenAnswer(val === "4" ? "4+" : val);
+        };
+    });
+
+    // Первый запуск
+    generateNewHand();
+</script>
+
