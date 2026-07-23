@@ -413,8 +413,8 @@
 
         let shanten = 6 - pairs.size;
 
-        if (singleTiles == 0) {
-            shanten = Math.max(shanten, 1);
+        if (singleTiles == 0 && shanten == 0) {
+            shanten = 1;
         }
         
         return shanten;
